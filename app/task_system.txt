@@ -1,0 +1,42 @@
+task_system.c (task_system.h, task_system_attribute.h)
+   Non-Blocking & Update By Time Code -> System Modeling
+
+  task_system_interface.c (task_system_interface.h)
+   Non-Blocking Code
+
+
+Se implementa un sistema de control por tareas, 
+que funciona para gestionar actuadores (como LEDs). 
+
+Estructuras y definiciones
+	- Se definen estados y eventos para cada subsistema:
+	El sistema principal maneja estados globales (IDLE, ACTIVE, etc.).
+	- Los actuadores (ejemplo: LEDs) cuentan con sus propios estados (apagado, 
+	encendido, parpadeo, pulso).
+	- Se utilizan estructuras de datos (task_system_dta_t, task_actuator_dta_t) para 
+	almacenar el estado actual, el último evento recibido, flags de actualización 
+	y tiempos asociados.
+
+Interfaz del sistema
+
+	- Archivos de interfaz (.h) exponen funciones públicas para inicializar, enviar 
+	eventos y consultar el estado de cada módulo.
+	- Se implementan colas circulares de eventos para almacenar y gestionar los 
+	eventos pendientes, con funciones para inicializarla, encolar y extraer 
+	eventos.
+
+Implementación de las tareas
+
+task_system.c define la lógica principal de la tarea de sistema:
+
+	-Inicialización (task_system_init): Configura estructuras internas, inicializa la cola de eventos y deja al 
+	sistema en estado IDLE. Además, imprime información de depuración vía logger.
+	- Actualización periódica (task_system_update): Se ejecuta en cada tick de sistema. Actualiza contadores, verifica 
+	interrupciones y decide si debe correrse la máquina de estados.
+	- Máquina de estados (task_system_statechart): Procesa eventos pendientes. Según el estado y el evento recibido, ejecuta 
+	acciones (como encender o apagar un LED) y actualiza el estado del sistema.
+
+En nuestro caso observamos que: 
+La variable g_app_runtime_us se inicializa en 0 us y finaliza en 20 us.
+El campo WCET inicializa en 0 ms para cada tarea y luego cambia para la tarea sensor a 14 us, para la sistema a 6 us y para la actuador a 5 us.
+...

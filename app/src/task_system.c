@@ -57,7 +57,7 @@
 
 #define DEL_SYS_MIN					0ul
 #define DEL_SYS_MED					50ul
-#define DEL_SYS_MAX					50000ul
+#define DEL_SYS_MAX					500ul
 
 /********************** internal data declaration ****************************/
 task_system_dta_t task_system_dta =
