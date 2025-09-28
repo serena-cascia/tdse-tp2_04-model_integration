@@ -1,0 +1,40 @@
+  task_sensor.c (task_sensor.h, task_sensor_attribute.h) 
+   Non-Blocking & Update By Time Code -> Sensor Modeling
+ 
+   task_sensor.c (task_sensor.h, task_sensor_attribute.h) 
+   Non-Blocking & Update By Time Code -> Sensor Modeling
+  
+  Evolución de los campos de la statechart: tick, state, event (anti-rebote y flancos)
+
+La configuración del sensor (en el array task_sensor_cfg_list) define: puerto/pin del botón, nivel lógico considerado presionado (pressed), el tick_max para rebote y qué evento mandar al sistema en flanco de subida/bajada.
+
+Los datos de la statechart (task_sensor_dta_list) tienen, por cada entrada/sensor:
+
+state: arranca en ST_BTN_XX_UP (botón suelto).
+
+event: arranca en EV_BTN_XX_UP.
+
+tick: se usa como temporizador de rebote (debounce).
+
+En cada pasada:
+
+Se lee el GPIO y se arma el event actual: EV_BTN_XX_DOWN si la lectura coincide con pressed; si no, EV_BTN_XX_UP.
+
+Con ese evento, la FSM hace:
+
+UP → si ve DOWN: pasa a FALLING, carga tick = TICK_MAX.
+
+FALLING → va decrementando tick. Al llegar a 0, confirma: si aún está DOWN, entra en DOWN y dispara signal_down al sistema; si no, vuelve a UP.
+
+DOWN → si ve UP: pasa a RISING, tick = TICK_MAX.
+
+RISING → idem: al llegar tick=0, si se mantiene UP, vuelve a UP y dispara signal_up; si no, vuelve a DOWN.
+
+Los flancos solo se confirman cuando el nivel se mantuvo estable por tick_max ticks (anti-rebote por tiempo de SysTick).
+
+Tambien se agregaron en este caso la configuracion para tres botones nuevos e la lista task_sensor_cfg_list.
+
+En nuestro caso observamos que: 
+La variable g_app_runtime_us se inicializa en 0 us y finaliza en 20 us.
+El campo WCET inicializa en 0 ms para cada tarea y luego cambia para la tarea sensor a 14 us, para la sistema a 6 us y para la actuador a 5 us.
+...

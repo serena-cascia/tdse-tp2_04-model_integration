@@ -1,0 +1,42 @@
+  app.c (app.h)
+   Endless loops, which execute tasks with fixed computing time. This 
+   sequential execution is only deviated from when an interrupt event occurs.
+   Cyclic Executive (Update by Time Code, period = 1mS)
+
+...
+
+	El main.c arranca todo el programa.
+	Primero inicializa el HAL, el clock, los GPIO y el UART para poder loguear.
+	Esto configura el temporizador interno SysTick en 1 ms y la frecuencia del reloj del sistema que pasa de 8Mhz a 64Mhz.
+	Después llama a app_init() y entra en el while(1) infinito.
+	Ahí lo único que hace es llamar a app_update() todo el tiempo.
+	O sea, el main funciona como “bootstrap”: levanta el hardware y arranca la aplicación.
+
+	En MX_GPIO_Init() se inicializan los pines.
+	El LED se configura como salida (para prender/apagar).
+	El botón azul B1, lo pone como interrupción (IT_RISING),
+
+	En app.c está la aplicación.
+	Se define un array de estructuras con punteros a funciones init y update de cada tarea, como una tabla de tareas: sensor, system, actuator.
+
+	app_init(): recorre esa tabla y llama a todos los task_init() para inicializar cada módulo.
+	También inicializa los contadores de ticks en 0 y arranca el contador de ciclos para medir tiempos.
+
+	app_update(): se fija si hay ticks pendientes.
+	Si hay, consume un tick y recorre todas las tareas llamando a su task_update().
+	A cada tarea le mide cuánto tardó (con DWT) y actualiza su WCET (peor tiempo de ejecución).
+
+	Los ticks llegan desde HAL_SYSTICK_Callback().
+	Ahí se incrementan los contadores globales de la app y de cada tarea.
+
+	Tipos de datos:
+	- task_cfg_t: guarda los punteros a las funciones init/update y parámetros.
+	- task_dta_t: guarda cuánto tardó la tarea en su peor tiempo (WCET).
+	- g_app_tick_cnt y similares: contadores globales que dicen cuántas veces hay que ejecutar cada tarea.
+	- g_app_runtime_us: Gurda el tiempo total que tarda en ejecutarse todas las tareas. 
+
+	En nuestro caso observamos que: 
+	La variable g_app_runtime_us se inicializa en 0 ms y finaliza en 13 us.
+	El campo WCET inicializa en 0 ms para cada tarea y luego cambia para la tarea sensor a 5 ms, para la sistema a 4 us y para la actuador a 4 us.
+
+	En este caso, el uso de LOGGER_INFO() si afecta el valor de g_app_runtime_us y WCET, ya que es utilizada dentro de cada tarea,  añadiendo una ligera sobrecarga de procesamiento y de disco al escribir mensajes.
