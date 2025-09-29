@@ -54,7 +54,7 @@
 #define G_TASK_ACT_TICK_CNT_INI		0ul
 
 #define DEL_LED_XX_PUL				250ul
-#define DEL_LED_XX_BLI				500ul
+#define DEL_LED_XX_BLI				50ul
 #define DEL_LED_XX_MIN				0ul
 
 /********************** internal data declaration ****************************/
